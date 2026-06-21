@@ -194,7 +194,7 @@ basic_array ::= (("[" [ \n\t]* basic_any basic_array_1 [ \n\t]* "]") | ("[" [ \n
 basic_object ::= (("{" [ \n\t]* basic_string [ \n\t]* ":" [ \n\t]* basic_any basic_object_1 [ \n\t]* "}") | ("{" [ \n\t]* "}"))
 xml_string ::= TagDispatch(
   loop_after_dispatch=false,
-  excludes=("</parameter>")
+  excludes=("</parameter")
 )
 xml_any ::= ((xml_string) | (basic_array) | (basic_object))
 xml_object ::= (([ \n\t]* "<parameter=" xml_variable_name ">" [ \n\t]* xml_any [ \n\t]* "</parameter>" xml_object_1 [ \n\t]*) | ([ \n\t]*))
@@ -230,6 +230,15 @@ qwen_parameter_xml_instance_is_accepted = [
   <body><h1>Hello</h1></body>
 </html></parameter><parameter=age>100</parameter>""",
         True,
+    ),
+    # Near-miss closing tag must NOT be absorbed into the value. Excluding only the
+    # exact "</parameter>" would accept this (the value would swallow
+    # "</parameter_function>Jakarta"); excluding the tag prefix "</parameter" forces
+    # the model to complete the closing tag exactly, so this is rejected.
+    (
+        "<parameter=name>Bob</parameter_function>Jakarta</parameter>"
+        "<parameter=age>100</parameter>",
+        False,
     ),
 ]
 
@@ -306,7 +315,7 @@ basic_array ::= (("[" [ \n\t]* basic_any basic_array_1 [ \n\t]* "]") | ("[" [ \n
 basic_object ::= (("{" [ \n\t]* basic_string [ \n\t]* ":" [ \n\t]* basic_any basic_object_1 [ \n\t]* "}") | ("{" [ \n\t]* "}"))
 xml_string ::= TagDispatch(
   loop_after_dispatch=false,
-  excludes=("</parameter>")
+  excludes=("</parameter")
 )
 xml_any ::= ((xml_string) | (basic_array) | (basic_object))
 xml_object ::= (([ \n\t]* "<parameter name=\"" xml_variable_name "\">" [ \n\t]* xml_any [ \n\t]* "</parameter>" xml_object_1 [ \n\t]*) | ([ \n\t]*))
@@ -389,7 +398,7 @@ basic_array ::= (("[" [ \n\t]* basic_any basic_array_1 [ \n\t]* "]") | ("[" [ \n
 basic_object ::= (("{" [ \n\t]* basic_string [ \n\t]* ":" [ \n\t]* basic_any basic_object_1 [ \n\t]* "}") | ("{" [ \n\t]* "}"))
 xml_string ::= TagDispatch(
   loop_after_dispatch=false,
-  excludes=("</\uff5cDSML\uff5cparameter>")
+  excludes=("</\uff5cDSML\uff5cparameter")
 )
 xml_any ::= ((xml_string) | (basic_array) | (basic_object))
 xml_object ::= (([ \n\t]* "<\uff5cDSML\uff5cparameter name=\"" xml_variable_name "\" string=\"" xml_object_2 "\">" [ \n\t]* xml_any [ \n\t]* "</\uff5cDSML\uff5cparameter>" xml_object_1 [ \n\t]*) | ([ \n\t]*))

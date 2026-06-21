@@ -60,13 +60,27 @@ void XMLToolCallingConverter::AddBasicRules() {
   JSONSchemaConverter::AddBasicRules();
   nested_object_level_ = 1;
   // The outer part, xml format, is at level 1.
-  // Add XML string rule
+  // Add XML string rule.
+  //
+  // The value is free text terminated by the closing tag (e.g. "</parameter>").
+  // We must exclude the closing tag's PREFIX (the tag without its final '>'),
+  // not the exact closing tag. If we exclude only the exact "</parameter>", a
+  // model that emits a near-miss like "</parameter_function>" (which does not
+  // contain the substring "</parameter>", since '_' follows "parameter") is
+  // absorbed into the value forever and the closing tag is never forced -> the
+  // tool call never terminates. Excluding the prefix "</parameter" forces the
+  // model to complete the tag exactly as "</parameter>" while still allowing
+  // unrelated markup such as "</html>" inside the value.
+  std::string value_terminator_exclude = xml_wrapper_.parameter_suffix;
+  if (!value_terminator_exclude.empty() && value_terminator_exclude.back() == '>') {
+    value_terminator_exclude.pop_back();
+  }
   ebnf_script_creator_.AddRule(
       kXMLString,
       "TagDispatch("
       "loop_after_dispatch=false,"
       "excludes=(\"" +
-          xml_wrapper_.parameter_suffix +
+          value_terminator_exclude +
           "\")"
           ")"
   );
